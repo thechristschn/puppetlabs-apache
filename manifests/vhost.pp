@@ -41,6 +41,7 @@ define apache::vhost(
   $ssl_stapling_timeout                                                             = undef,
   $ssl_stapling_return_errors                                                       = undef,
   $priority                                                                         = undef,
+  $vhost_enable_dir                                                                 = $::apache::vhost_enable_dir,
   Boolean $default_vhost                                                            = false,
   $servername                                                                       = $name,
   $serveraliases                                                                    = [],
@@ -531,8 +532,8 @@ define apache::vhost(
   }
   # NOTE(pabelanger): This code is duplicated in ::apache::vhost::custom and
   # needs to be converted into something generic.
-  if $::apache::vhost_enable_dir {
-    $vhost_enable_dir = $::apache::vhost_enable_dir
+  if $vhost_enable_dir {
+    #$vhost_enable_dir = $::apache::vhost_enable_dir
     $vhost_symlink_ensure = $ensure ? {
       present => link,
       default => $ensure,
