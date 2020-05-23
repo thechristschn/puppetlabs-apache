@@ -1583,6 +1583,28 @@ describe 'apache::vhost', type: :define do
           it { is_expected.not_to contain_concat__fragment('NameVirtualHost *:80') }
         end
 
+        context 'vhost without symlink' do
+          let :params do
+            {
+              'port'                        => '80',
+              'ip'                          => '127.0.0.1',
+              'ip_based'                    => true,
+              'servername'                  => 'example.com',
+              'docroot'                     => '/var/www/html',
+              'add_listen'                  => true,
+              'ensure'                      => 'present',
+              'vhost_symlink_ensure'        => 'absent',
+            }
+          end
+
+          it { is_expected.to compile }
+          if facts[:os]['release']['major'].to_i >= 18 && facts[:os]['name'] == 'Ubuntu'
+            it {
+              is_expected.to contain_file('30-rspec.example.com.conf symlink').with('ensure' => 'absent')
+            }
+          end
+        end
+
         context 'modsec_audit_log' do
           let :params do
             {

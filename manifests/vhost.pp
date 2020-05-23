@@ -250,6 +250,10 @@
 # 
 # @param ensure
 #   Specifies if the virtual host is present or absent.<br />
+#
+# @param vhost_symlink_ensure
+#   Specifies if the symlink for the virtual host is present or absent. This only has an effect if
+#   `apache::vhost_enable_dir` is set. If undefined, the value of `ensure` is used.
 # 
 # @param fallbackresource
 #   Sets the [FallbackResource](https://httpd.apache.org/docs/current/mod/mod_dir.html#fallbackresource) 
@@ -1806,6 +1810,7 @@ define apache::vhost(
   $setenvifnocase                                                                   = [],
   $block                                                                            = [],
   Enum['absent', 'present'] $ensure                                                 = 'present',
+  Optional[Enum['absent', 'present']] $vhost_symlink_ensure                         = undef,
   $wsgi_application_group                                                           = undef,
   Optional[Variant[String,Hash]] $wsgi_daemon_process                               = undef,
   Optional[Hash] $wsgi_daemon_process_options                                       = undef,
@@ -2258,12 +2263,16 @@ define apache::vhost(
   # needs to be converted into something generic.
   if $::apache::vhost_enable_dir {
     $vhost_enable_dir = $::apache::vhost_enable_dir
-    $vhost_symlink_ensure = $ensure ? {
-      present => link,
-      default => $ensure,
+    if $vhost_symlink_ensure {
+      $_vhost_symlink_ensure = $vhost_symlink_ensure
+    } else {
+      $_vhost_symlink_ensure = $ensure ? {
+        present => link,
+        default => $ensure,
+      }
     }
     file{ "${priority_real}${filename}.conf symlink":
-      ensure  => $vhost_symlink_ensure,
+      ensure  => $_vhost_symlink_ensure,
       path    => "${vhost_enable_dir}/${priority_real}${filename}.conf",
       target  => "${::apache::vhost_dir}/${priority_real}${filename}.conf",
       owner   => 'root',

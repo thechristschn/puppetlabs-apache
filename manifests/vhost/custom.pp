@@ -9,6 +9,10 @@
 # @param ensure
 #   Specifies if the virtual host file is present or absent.
 #
+# @param vhost_symlink_ensure
+#   Specifies if the symlink for the virtual host is present or absent. This only has an effect if
+#   `apache::vhost_enable_dir` is set. If undefined, the value of `ensure` is used.
+#
 # @param priority
 #   Sets the relative load order for Apache HTTPD VirtualHost configuration files.
 #
@@ -18,6 +22,7 @@
 define apache::vhost::custom(
   $content,
   $ensure = 'present',
+  $vhost_symlink_ensure = undef,
   $priority = '25',
   $verify_config = true,
 ) {
@@ -37,13 +42,15 @@ define apache::vhost::custom(
   # NOTE(pabelanger): This code is duplicated in ::apache::vhost and needs to
   # converted into something generic.
   if $::apache::vhost_enable_dir {
-    $vhost_symlink_ensure = $ensure ? {
-      present => link,
-      default => $ensure,
-    }
-
+    if $vhost_symlink_ensure {
+      $_vhost_symlink_ensure = $vhost_symlink_ensure
+    } else {
+      $_vhost_symlink_ensure = $ensure ? {
+        present => link,
+        default => $ensure,
+      }
     file { "${priority}-${filename}.conf symlink":
-      ensure  => $vhost_symlink_ensure,
+      ensure  => $_vhost_symlink_ensure,
       path    => "${::apache::vhost_enable_dir}/${priority}-${filename}.conf",
       target  => "${::apache::vhost_dir}/${priority}-${filename}.conf",
       owner   => 'root',
